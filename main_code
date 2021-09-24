@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# ## Importing the libraries
+# 
+
+# In[77]:
+
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+# ## Importing the different data
+
+# In[78]:
+
+
+df1=pd.read_csv('Emotion(angry).csv')
+df2=pd.read_csv('Emotion(happy).csv')
+df3=pd.read_csv('Emotion(sad).csv')
+
+
+# ## Combining the 3 datasets
+
+# In[88]:
+
+
+df=pd.concat([df1,df2])
+df=pd.concat([df,df3])
+df.reset_index(inplace=True)
+df.drop(columns=['index'])
+
+
+#  
+# ## Cleaning and interating over the data
+
+# In[80]:
+
+
+import re 
+import nltk
+nltk.download('stopwords')
+from nltk.corpus import stopwords
+from nltk.stem.porter import PorterStemmer
+corpus=[]
+for i in range(0,len(df)):
+    sentiment=re.sub('^a-zA-Z',' ', df['content'][i])
+    sentiment=sentiment.lower()
+    sentiment=sentiment.split()
+    ps=PorterStemmer()
+    all_stopwords=stopwords.words('english')
+    all_stopwords.remove('not')
+    sentiment=[ps.stem(word) for word in sentiment if not word in set(all_stopwords)]
+    sentiment=' '.join(sentiment)
+    corpus.append(sentiment)
+    
+
+
+# ## Vectorizing the data
+
+# In[86]:
+
+
+from sklearn.feature_extraction.text import CountVectorizer
+cv=CountVectorizer()
+X=cv.fit_transform(corpus).toarray()
+
+
+# ## Label encoding y
+
+# In[87]:
+
+
+from sklearn.preprocessing import LabelEncoder
+le=LabelEncoder()
+y=le.fit_transform(df['sentiment'])
+
+
+# ## Train test split
+
+# In[83]:
+
+
+from sklearn.model_selection import train_test_split
+X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.2)
+
+
+# ## Training the classifier and predicting the results
+
+# In[84]:
+
+
+from sklearn.naive_bayes import GaussianNB
+classifier=GaussianNB()
+classifier.fit(X_train,y_train)
+y_pred=classifier.predict(X_test)
+
+
+# ## Calculating the accuracy 
+
+# In[85]:
+
+
+from sklearn.metrics import accuracy_score
+accuracy_score(y_pred,y_test)
